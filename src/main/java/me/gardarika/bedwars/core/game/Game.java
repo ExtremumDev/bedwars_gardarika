@@ -10,6 +10,7 @@ import me.gardarika.bedwars.listeners.player.PlayerDamageListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -60,6 +61,11 @@ public class Game {
         this.spectatorsSpawn = arena.getMap().getSpectatorsSpawn().toLocation(arena.getGameWorld());
     }
 
+
+    public void startGame(){
+
+    }
+
     public void addPlayer(Player p){
         switch (this.currentGameState){
             case WAITING:
@@ -82,11 +88,6 @@ public class Game {
     public void playerLeave(Player p){
         GamePlayer gamePlayer = getGamePlayer(p.getUniqueId());
         if ()
-    }
-
-
-    public void startGame(){
-
     }
 
     public void handlePlayerDamage(EntityDamageEvent event, Player damagedPlayer){
@@ -129,11 +130,17 @@ public class Game {
     }
 
     private void setSpectatorSettingsForPlayer(Player p){
-
+        p.setAllowFlight(true);
+        p.setFlying(true);
+        p.setGameMode(GameMode.ADVENTURE);
+        p.setHealth(20.0);
+        p.setFoodLevel(20);
+        p.getInventory().clear();
+        p.setFireTicks(0);
     }
 
     private void teleportPlayerToSpectatorSpawn(Player p){
-
+        p.teleport(this.spectatorsSpawn);
     }
 
     private GamePlayer getGamePlayer(UUID playerUuid){
