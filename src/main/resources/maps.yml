@@ -1,0 +1,12 @@
+maps:
+    eight-commands:
+      name: "map1_name"
+
+      teams:
+        red:
+          spawn: [155, 26, 75]
+          bed-location: [100, 100, 100]
+        blue:
+          spawn: []
+
+      resource-spawns:
