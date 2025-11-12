@@ -5,13 +5,17 @@ import me.gardarika.bedwars.core.config.TeamConfig;
 import me.gardarika.bedwars.core.game.players.GamePlayer;
 import me.gardarika.bedwars.core.game.team.Team;
 import me.gardarika.bedwars.core.game.team.TeamColor;
+import me.gardarika.bedwars.listeners.player.PlayerDamageListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class Game {
     /**
@@ -67,12 +71,25 @@ public class Game {
     }
 
     public void playerLeave(Player p){
-        
+        GamePlayer gamePlayer = getGamePlayer(p.getUniqueId());
+        if ()
     }
 
 
     public void startGame(){
 
+    }
+
+    public void handlePlayerDamage(EntityDamageEvent event, Player damagedPlayer){
+        switch (currentGameState){
+            case WAITING:
+            case STARTING:
+                event.setCancelled(true);
+
+                if (event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
+                    
+                }
+        }
     }
 
     public void checkEndGame(){
@@ -111,5 +128,12 @@ public class Game {
 
     }
 
-
+    private GamePlayer getGamePlayer(UUID playerUuid){
+        for (GamePlayer gamePlayer : this.players){
+            if (gamePlayer.getPlayerUuid().equals(playerUuid)){
+                return gamePlayer;
+            }
+        }
+        return null;
+    }
 }

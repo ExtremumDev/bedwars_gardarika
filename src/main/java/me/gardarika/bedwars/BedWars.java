@@ -1,6 +1,8 @@
 package me.gardarika.bedwars;
 
 import me.gardarika.bedwars.core.managers.ArenaManager;
+import me.gardarika.bedwars.core.managers.LobbyManager;
+import me.gardarika.bedwars.core.managers.PlayerManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class BedWars extends JavaPlugin {
@@ -8,6 +10,8 @@ public class BedWars extends JavaPlugin {
     private static BedWars instance;
 
     private ArenaManager arenaManager;
+    private PlayerManager playerManager;
+    private LobbyManager lobbyManager;
 
     @Override
     public void onEnable() {
@@ -22,6 +26,10 @@ public class BedWars extends JavaPlugin {
         // start game set up
 
         arenaManager.createArenasFromConfig();
+
+        playerManager = new PlayerManager();
+
+        lobbyManager = new LobbyManager();
     }
 
     @Override
@@ -35,5 +43,17 @@ public class BedWars extends JavaPlugin {
 
     public static BedWars getInstance() {
         return instance;
+    }
+
+    public PlayerManager getPlayerManager(){
+        return playerManager;
+    }
+
+    public LobbyManager getLobbyManager() {
+        return lobbyManager;
+    }
+
+    public void setLobbyManager(LobbyManager lobbyManager) {
+        this.lobbyManager = lobbyManager;
     }
 }
