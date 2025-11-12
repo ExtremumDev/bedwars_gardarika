@@ -106,10 +106,11 @@ public class Game {
     }
 
     private void finishGame(){
-
+        // Natural  game finish in case of winner appear
     }
 
     public void endForced(){
+        // Forced game finish, for example when server turned off or admin do it with command
         this.kickPlayers();
 
         this.saveData();
@@ -118,15 +119,15 @@ public class Game {
     }
 
     private void clearGame(){
-
+        // Start clear from players, save statistics, start arena reload
     }
 
     private void kickPlayers(){
-
+        // Clear arena from players, move them to lobby
     }
 
     private void saveData(){
-
+        // Save player's statistics, game's statistics
     }
 
     private void setSpectatorSettingsForPlayer(Player p){
