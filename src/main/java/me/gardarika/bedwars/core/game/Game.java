@@ -5,10 +5,12 @@ import me.gardarika.bedwars.core.config.TeamConfig;
 import me.gardarika.bedwars.core.game.players.GamePlayer;
 import me.gardarika.bedwars.core.game.team.Team;
 import me.gardarika.bedwars.core.game.team.TeamColor;
+import me.gardarika.bedwars.core.utils.Coordinates;
 import me.gardarika.bedwars.listeners.player.PlayerDamageListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -33,7 +35,11 @@ public class Game {
     // Players section
     private List<Team> teams;
     private List<GamePlayer> players;
-    private List<Player> spectators;
+
+    // Map propetries
+
+    private final Location spectatorsSpawn;
+    private final Location waitingSpawn;
 
 
 
@@ -49,6 +55,9 @@ public class Game {
         }
 
         this.currentGameState = GameState.WAITING;
+
+        this.waitingSpawn = arena.getMap().getWaitingSpawn().toLocation(arena.getGameWorld());
+        this.spectatorsSpawn = arena.getMap().getSpectatorsSpawn().toLocation(arena.getGameWorld());
     }
 
     public void addPlayer(Player p){
@@ -85,9 +94,8 @@ public class Game {
             case WAITING:
             case STARTING:
                 event.setCancelled(true);
-
                 if (event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
-                    
+                    damagedPlayer.teleport(this.waitingSpawn);
                 }
         }
     }
