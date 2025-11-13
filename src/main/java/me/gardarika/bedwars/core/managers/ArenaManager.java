@@ -143,17 +143,8 @@ public class ArenaManager {
 
                     resourceSpawners.put(
                             resource,
-                            new ArrayList<>()
+                            Coordinates.listFromConfig(resourceSpawnersConfig.getMapList(resourceType))
                     );
-
-                    List<Map<?, ?>> resourceSpawnPoints =  resourceSpawnersConfig.getMapList(resourceType);
-
-                    for (Map<?, ?> coordinates : resourceSpawnPoints) {
-                        int x = (int) coordinates.get("x");
-                        int y = (int) coordinates.get("y");
-                        int z = (int) coordinates.get("z");
-                        resourceSpawners.get(resource).add(new Coordinates(x, y, z));
-                    }
 
                 } catch (IllegalArgumentException e) {
                     BedWars.getInstance().getLogger().warning(
@@ -178,7 +169,7 @@ public class ArenaManager {
         }
     }
 
-    public void forcedDestroyArenas(){
+    public void turnOffAllArenas(){
         for (String arenaId : this.arenasData.keySet()){
             Arena arena = this.arenasData.get(arenaId);
 

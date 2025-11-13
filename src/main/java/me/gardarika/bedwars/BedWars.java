@@ -34,7 +34,7 @@ public class BedWars extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        this.arenaManager.forcedDestroyArenas();
+        this.arenaManager.turnOffAllArenas();
     }
 
     public ArenaManager getArenaManager() {

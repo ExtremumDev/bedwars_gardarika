@@ -2,8 +2,10 @@ package me.gardarika.bedwars.core.arena;
 
 import me.gardarika.bedwars.core.config.MapData;
 import me.gardarika.bedwars.core.game.Game;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
 import org.bukkit.entity.Player;
 
 import java.lang.ref.WeakReference;
@@ -30,6 +32,8 @@ public class Arena {
             return;
         }
 
+        this.gameWorld = new WeakReference<>(loadGameWorld());
+
         this.currentGame = new Game(this);
     }
 
@@ -51,6 +55,10 @@ public class Arena {
         }
     }
 
+    private World loadGameWorld(){
+        return Bukkit.createWorld(new WorldCreator("game"));
+    }
+
     public void forcedDestroy(){
         if (state.equals(ArenaState.READY)){
             this.forcedEndGame();
@@ -58,7 +66,7 @@ public class Arena {
     }
 
     public void forcedEndGame(){
-        if (currentGame == null){
+        if (currentGame != null){
             this.currentGame.endForced();
         }
     }

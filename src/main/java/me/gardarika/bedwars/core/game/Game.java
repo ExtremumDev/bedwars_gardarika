@@ -1,17 +1,18 @@
 package me.gardarika.bedwars.core.game;
 
+import me.gardarika.bedwars.BedWars;
 import me.gardarika.bedwars.core.arena.Arena;
 import me.gardarika.bedwars.core.config.TeamConfig;
 import me.gardarika.bedwars.core.game.players.GamePlayer;
+import me.gardarika.bedwars.core.game.players.PlayerState;
 import me.gardarika.bedwars.core.game.team.Team;
 import me.gardarika.bedwars.core.game.team.TeamColor;
+import me.gardarika.bedwars.core.managers.LobbyManager;
 import me.gardarika.bedwars.core.utils.Coordinates;
 import me.gardarika.bedwars.listeners.player.PlayerDamageListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -124,6 +125,19 @@ public class Game {
 
     private void kickPlayers(){
         // Clear arena from players, move them to lobby
+
+        LobbyManager lobbyManager = BedWars.getInstance().getLobbyManager();
+        for (GamePlayer gamePlayer : this.players){
+            if (gamePlayer.isOnArena()){
+                lobbyManager.movePlayerToLobby(Bukkit.getPlayer(gamePlayer.getPlayerUuid()));
+                gamePlayer.setOnArena(false);
+            }
+
+            // Extra check for
+            for (Player worldPlayer : arena.getGameWorld().getPlayers()){
+                lobbyManager.movePlayerToLobby(worldPlayer);
+            }
+        }
     }
 
     private void saveData(){
