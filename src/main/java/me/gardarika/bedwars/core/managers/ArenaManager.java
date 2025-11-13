@@ -77,30 +77,36 @@ public class ArenaManager {
 
     public void loadMapsData(){
 
-        File mapsConfigFile = new File(BedWars.getInstance().getDataFolder(), "maps.yml");
+        File mapsConfigsDir = new File(BedWars.getInstance().getDataFolder(), "maps");
 
-        if(!mapsConfigFile.exists()){
-            BedWars.getInstance().getLogger().log(
-                    Level.WARNING,
-                    "File with maps config does not exists, so no games will be created"
+        if(!mapsConfigsDir.exists()){
+            BedWars.getInstance().getLogger().warning(
+                    "Directory with maps config does not exists, so no games will be created"
+            );
+            mapsConfigsDir.mkdirs();
+            return;
+        }
+
+        if(!mapsConfigsDir.isDirectory()){
+            BedWars.getInstance().getLogger().warning(
+                    "Invalid maps config format(it is file, not directory)"
             );
             return;
         }
 
-        FileConfiguration mapsConfig = YamlConfiguration.loadConfiguration(mapsConfigFile);
+        File[] mapsConfigFiles = mapsConfigsDir.listFiles();
 
-        ConfigurationSection mapsList = mapsConfig.getConfigurationSection("arenas");
-
-        if (mapsList == null) {
+        if (mapsConfigFiles == null) {
             BedWars.getInstance().getLogger().log(
                     Level.WARNING,
-                    "File with config of maps is empty, so no games will be created"
+                    "Directory with config of maps is empty, so no games will be created"
             );
             return;
         }
-        for (String mapId : mapsList.getKeys(false)){
-            ConfigurationSection mapConfig = mapsList.getConfigurationSection(mapId);
+        for (File mapConfigFile : mapsConfigFiles){
+            FileConfiguration mapConfig = YamlConfiguration.loadConfiguration(mapConfigFile);
 
+            String mapId = mapConfig.getString("id");
 
             ConfigurationSection teamsConfigurationSection = mapConfig.getConfigurationSection("teams");
 
