@@ -5,7 +5,7 @@ import me.gardarika.bedwars.core.arena.Arena;
 import me.gardarika.bedwars.core.config.MapData;
 import me.gardarika.bedwars.core.config.TeamConfig;
 import me.gardarika.bedwars.core.game.team.TeamColor;
-import me.gardarika.bedwars.core.items.GameResource;
+import me.gardarika.bedwars.core.items.ResourceType;
 import me.gardarika.bedwars.core.utils.Coordinates;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -110,34 +110,41 @@ public class ArenaManager {
 
             ConfigurationSection teamsConfigurationSection = mapConfig.getConfigurationSection("teams");
 
-            List<TeamConfig> teamConfigs = new ArrayList<>();
+            if (teamsConfigurationSection == null) {
+                BedWars.getInstance().getLogger().warning(
+                        String.format("No team's section in map's config (mapId : %s)", mapId)
+                );
+                return;
+            }
+
+            TeamConfig[] teamConfigs = new TeamConfig[teamsConfigurationSection.getKeys(false).size()];
 
 
             // Reading teams config
+            int i = 0;
             for (String teamId : teamsConfigurationSection.getKeys(false)){
 
                 try{
                     // Check if correctly team color specified in config
                     TeamColor teamColor = TeamColor.valueOf(teamId.toUpperCase());
 
-                    teamConfigs.add(
-                            new TeamConfig(
-                                    teamColor,
-                                    Coordinates.fromConfig(teamsConfigurationSection.getConfigurationSection(teamId).getConfigurationSection("bed-location")),
-                                    Coordinates.fromConfig(teamsConfigurationSection.getConfigurationSection(teamId).getConfigurationSection("spawn"))
-                            )
+                    teamConfigs[i] = new TeamConfig(
+                        teamColor,
+                        Coordinates.fromConfig(teamsConfigurationSection.getConfigurationSection(teamId).getConfigurationSection("bed-location")),
+                        Coordinates.fromConfig(teamsConfigurationSection.getConfigurationSection(teamId).getConfigurationSection("spawn"))
                     );
+                    i++;
 
                 } catch (IllegalArgumentException e) {
                     BedWars.getInstance().getLogger().warning(
-                            String.format("Invalid resource type in resource spawners section of maps config (mapId : %s)", mapId)
+                            String.format("Invalid team color in resource spawners section of maps config (mapId : %s)", mapId)
                     );
                 }
             }
 
             ConfigurationSection resourceSpawnersConfig = mapConfig.getConfigurationSection("resource-spawners");
 
-            Map<GameResource, List<Coordinates>> resourceSpawners = new HashMap<>();
+            Map<ResourceType, List<Coordinates>> resourceSpawners = new HashMap<>();
 
 
             // Reading resource generators coordinates
@@ -145,7 +152,7 @@ public class ArenaManager {
 
                 try{
                     // Check if correctly resource name specified in config
-                    GameResource resource = GameResource.valueOf(resourceType.toUpperCase());
+                    ResourceType resource = ResourceType.valueOf(resourceType.toUpperCase());
 
                     resourceSpawners.put(
                             resource,

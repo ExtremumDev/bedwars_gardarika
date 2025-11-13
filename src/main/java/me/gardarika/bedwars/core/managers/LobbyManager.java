@@ -9,7 +9,7 @@ public class LobbyManager {
     private final Location lobbySpawn;
 
     public LobbyManager(){
-        this.lobbySpawn = new Location(Bukkit.getWorld("world"), 1, 1, 1);
+        this.lobbySpawn = new Location(Bukkit.getWorld("world"), 8, -60, 8);
     }
 
     public void movePlayerToLobby(Player p){

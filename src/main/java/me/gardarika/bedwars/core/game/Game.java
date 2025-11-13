@@ -2,24 +2,22 @@ package me.gardarika.bedwars.core.game;
 
 import me.gardarika.bedwars.BedWars;
 import me.gardarika.bedwars.core.arena.Arena;
+import me.gardarika.bedwars.core.config.MapData;
 import me.gardarika.bedwars.core.config.TeamConfig;
+import me.gardarika.bedwars.core.environment.ResourceSpawner;
 import me.gardarika.bedwars.core.game.players.GamePlayer;
-import me.gardarika.bedwars.core.game.players.PlayerState;
 import me.gardarika.bedwars.core.game.team.Team;
-import me.gardarika.bedwars.core.game.team.TeamColor;
+import me.gardarika.bedwars.core.items.ResourceType;
 import me.gardarika.bedwars.core.managers.LobbyManager;
 import me.gardarika.bedwars.core.utils.Coordinates;
-import me.gardarika.bedwars.listeners.player.PlayerDamageListener;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Game {
     /**
@@ -35,31 +33,56 @@ public class Game {
 
 
     // Players section
-    private List<Team> teams;
+    private final Team[] teams;
     private List<GamePlayer> players;
 
-    // Map propetries
+    // Map properties
 
     private final Location spectatorsSpawn;
     private final Location waitingSpawn;
+
+    private final Map<ResourceType, ResourceSpawner[]> resourceSpawners = new HashMap<>();
+    private final Map<ResourceType, Integer> resourceSpawnTasksId = new HashMap<>();
 
 
 
     public Game(Arena arena){
         this.arena = arena;
 
-        this.teams = new ArrayList<>();
+        World gameWorld = arena.getGameWorld();
 
-        for (TeamConfig teamConfig : arena.getMap().getTeams()){
-            this.teams.add(
-                    new Team(teamConfig, arena.getGameWorld())
-            );
+        MapData mapData = arena.getMap();
+
+        TeamConfig[] teamConfigs = mapData.getTeams();
+        this.teams = new Team[teamConfigs.length];
+
+        for (int i = 0; i < teamConfigs.length; i++){
+            this.teams[i] = new Team(teamConfigs[i], gameWorld);
         }
 
         this.currentGameState = GameState.WAITING;
 
-        this.waitingSpawn = arena.getMap().getWaitingSpawn().toLocation(arena.getGameWorld());
-        this.spectatorsSpawn = arena.getMap().getSpectatorsSpawn().toLocation(arena.getGameWorld());
+        this.waitingSpawn = mapData.getWaitingSpawn().toLocation(gameWorld);
+        this.spectatorsSpawn = mapData.getSpectatorsSpawn().toLocation(gameWorld);
+
+
+        Map<ResourceType, List<Coordinates>> resourceSpawnersData = mapData.getResourceSpawners();
+        for (ResourceType resourceType : resourceSpawnersData.keySet()){
+            ResourceSpawner[] typeResourceSpawners = new ResourceSpawner[resourceSpawnersData.get(resourceType).size()];
+
+            for (int j = 0; j < typeResourceSpawners.length; j++){
+
+                typeResourceSpawners[j] = new ResourceSpawner(
+                        resourceType,
+                        resourceSpawnersData.get(resourceType).get(j).toLocation(gameWorld)
+                );
+            }
+
+            this.resourceSpawners.put(
+                    resourceType,
+                    typeResourceSpawners
+            );
+        }
     }
 
 
@@ -165,5 +188,29 @@ public class Game {
             }
         }
         return null;
+    }
+
+    private void spawnResourceForType(ResourceType resourceType){
+        for (ResourceSpawner spawner : this.resourceSpawners.get(resourceType)){
+            spawner.dropResource();
+        }
+    }
+
+    private void setupResourceTasks(){
+        for (ResourceType resourceType : this.resourceSpawners.keySet()){
+            BukkitTask spawnTask = Bukkit.getScheduler().runTaskTimer(
+                    BedWars.getInstance(),
+                    () -> this.spawnResourceForType(resourceType),
+                    20,
+                    20
+            );
+            this.resourceSpawnTasksId.put(resourceType, spawnTask.getTaskId());
+        }
+    }
+
+    private void cancelResourceTasks(){
+        for (ResourceType resourceType : this.resourceSpawnTasksId.keySet()){
+            Bukkit.getScheduler().cancelTask(this.resourceSpawnTasksId.get(resourceType));
+        }
     }
 }
