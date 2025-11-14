@@ -130,7 +130,11 @@ public class ArenaManager {
 
                     teamConfigs[i] = new TeamConfig(
                         teamColor,
-                        Coordinates.fromConfig(teamsConfigurationSection.getConfigurationSection(teamId).getConfigurationSection("bed-location")),
+                        Coordinates.fromConfig(
+                                teamsConfigurationSection.getConfigurationSection(teamId).getConfigurationSection("bed-foot-location")),
+                        Coordinates.fromConfig(
+                                teamsConfigurationSection.getConfigurationSection(teamId).getConfigurationSection("bed-head-location")
+                        ),
                         Coordinates.fromConfig(teamsConfigurationSection.getConfigurationSection(teamId).getConfigurationSection("spawn"))
                     );
                     i++;

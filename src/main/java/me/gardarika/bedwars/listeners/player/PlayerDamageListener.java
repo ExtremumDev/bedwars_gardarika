@@ -30,7 +30,10 @@ public class PlayerDamageListener implements Listener {
             if (game == null){
                 e.setCancelled(true);
 
-                lobbyManager.teleportPlayerToLobbySpawn(p);
+                if (e.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
+
+                    lobbyManager.teleportPlayerToLobbySpawn(p);
+                }
             } else{
                 game.handlePlayerDamage(e, p);
             }

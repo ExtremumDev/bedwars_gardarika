@@ -6,6 +6,7 @@ import me.gardarika.bedwars.core.config.MapData;
 import me.gardarika.bedwars.core.config.TeamConfig;
 import me.gardarika.bedwars.core.environment.ResourceSpawner;
 import me.gardarika.bedwars.core.game.players.GamePlayer;
+import me.gardarika.bedwars.core.game.players.PlayerState;
 import me.gardarika.bedwars.core.game.team.Team;
 import me.gardarika.bedwars.core.items.ResourceType;
 import me.gardarika.bedwars.core.managers.LobbyManager;
@@ -13,10 +14,13 @@ import me.gardarika.bedwars.core.utils.Coordinates;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.scheduler.BukkitTask;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class Game {
@@ -122,7 +126,83 @@ public class Game {
                 if (event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
                     damagedPlayer.teleport(this.waitingSpawn);
                 }
+                break;
+            case FINISHED:
+                event.setCancelled(true);
+
+                if (event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
+                    damagedPlayer.teleport(this.spectatorsSpawn);
+                }
+                break;
+            case ACTIVE:
+                GamePlayer gamePlayer = getGamePlayer(damagedPlayer.getUniqueId());
+                if (gamePlayer != null){
+
+                    if (event instanceof EntityDamageByEntityEvent){
+                        EntityDamageByEntityEvent damagedByEntityEvent = (EntityDamageByEntityEvent) event;
+
+                        if (gamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
+
+                            if (damagedByEntityEvent.getDamager() instanceof Player){
+                                Player damager = (Player) damagedByEntityEvent.getEntity();
+
+                                GamePlayer damagerGamePlayer = getGamePlayer(damager.getUniqueId());
+                                damager.getLas
+                                if (damagerGamePlayer != null) {
+                                    if (damagerGamePlayer.getTeam().equals(gamePlayer.getTeam())) {
+                                        event.setCancelled(true);
+                                        return;
+                                    } else {
+                                }
+                            }
+                        } else{
+                            event.setCancelled(true);
+                        }
+                    }
+                }else {
+                    event.setCancelled(true);
+                }
         }
+    }
+
+    public boolean handleBlockDestroy(Block destroyedBlock, @Nullable Player destroyer){
+
+        switch (this.currentGameState){
+            case WAITING:
+            case STARTING:
+            case FINISHED:
+                return true;
+            case ACTIVE:
+                if(destroyedBlock.getType().toString().endsWith("_BED")){
+                    if (destroyer != null){
+                        GamePlayer destroyerGamePlayer = getGamePlayer(destroyer.getUniqueId());
+
+                        if (destroyerGamePlayer != null && destroyerGamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
+
+                            Team bedTeam = findTeamBed(destroyedBlock);
+
+                            if (bedTeam != null){
+                                if (bedTeam.hasBed()) {
+                                    bedDestroyed(bedTeam, destroyerGamePlayer);
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    return false;
+                }
+
+        }
+
+        return true;
+    }
+
+    private void bedDestroyed(Team destroyedBedTeam, GamePlayer destroyer){
+        destroyedBedTeam.destroyBed();
+
+        destroyer.addDestroyedBed();
+
+
     }
 
     public void checkEndGame(){
@@ -212,5 +292,18 @@ public class Game {
         for (ResourceType resourceType : this.resourceSpawnTasksId.keySet()){
             Bukkit.getScheduler().cancelTask(this.resourceSpawnTasksId.get(resourceType));
         }
+    }
+
+    @Nullable
+    private Team findTeamBed(Block bedBlock){
+        Team bedTeam = null;
+        for (Team team : this.teams){
+            if (team.isTeamBed(bedBlock)){
+                bedTeam = team;
+                break;
+            }
+        }
+
+        return bedTeam;
     }
 }

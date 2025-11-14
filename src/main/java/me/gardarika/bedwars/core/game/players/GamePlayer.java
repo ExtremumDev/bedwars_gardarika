@@ -1,10 +1,13 @@
 package me.gardarika.bedwars.core.game.players;
 
+import me.gardarika.bedwars.core.game.team.Team;
+
 import java.util.UUID;
 
 public class GamePlayer {
     private final UUID playerUuid;
     private PlayerState state;
+    private Team team;
 
     private boolean isOnArena = true;
 
@@ -35,5 +38,25 @@ public class GamePlayer {
 
     public void setOnArena(boolean onArena) {
         isOnArena = onArena;
+    }
+
+    public void addDestroyedBed(){
+
+    }
+
+    public void addKill(boolean isFinal){
+
+    }
+
+    public void addDeath(){
+
+    }
+
+    public void setTeam(Team team){
+        this.team = team;
+    }
+
+    public Team getTeam(){
+        return team;
     }
 }
