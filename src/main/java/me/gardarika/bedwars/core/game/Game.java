@@ -18,6 +18,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitTask;
 
 import javax.annotation.Nullable;
@@ -119,44 +120,57 @@ public class Game {
     }
 
     public void handlePlayerDamage(EntityDamageEvent event, Player damagedPlayer){
+        boolean isVoidDamage = event.getCause().equals(EntityDamageEvent.DamageCause.VOID);
         switch (currentGameState){
             case WAITING:
             case STARTING:
                 event.setCancelled(true);
-                if (event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
+                if (isVoidDamage){
                     damagedPlayer.teleport(this.waitingSpawn);
                 }
                 break;
             case FINISHED:
                 event.setCancelled(true);
 
-                if (event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
-                    damagedPlayer.teleport(this.spectatorsSpawn);
+                if (isVoidDamage){
+
+                    GamePlayer gamePlayer = getGamePlayer(damagedPlayer.getUniqueId());
+
+                    if (gamePlayer != null){
+                        if (gamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
+                            damagedPlayer.teleport(gamePlayer.getTeam().getSpawnLocation());
+                        } else{
+                            damagedPlayer.teleport(this.spectatorsSpawn);
+                        }
+                    }
                 }
                 break;
             case ACTIVE:
                 GamePlayer gamePlayer = getGamePlayer(damagedPlayer.getUniqueId());
                 if (gamePlayer != null){
-
-                    if (event instanceof EntityDamageByEntityEvent){
-                        EntityDamageByEntityEvent damagedByEntityEvent = (EntityDamageByEntityEvent) event;
-
-                        if (gamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
+                    if (gamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
+                        if (event instanceof EntityDamageByEntityEvent damagedByEntityEvent){
 
                             if (damagedByEntityEvent.getDamager() instanceof Player){
                                 Player damager = (Player) damagedByEntityEvent.getEntity();
 
                                 GamePlayer damagerGamePlayer = getGamePlayer(damager.getUniqueId());
-                                damager.getLas
+
                                 if (damagerGamePlayer != null) {
                                     if (damagerGamePlayer.getTeam().equals(gamePlayer.getTeam())) {
                                         event.setCancelled(true);
                                         return;
-                                    } else {
+                                    }
                                 }
                             }
-                        } else{
-                            event.setCancelled(true);
+                        }
+
+
+                    } else {
+                        event.setCancelled(true);
+
+                        if (isVoidDamage){
+                            damagedPlayer.teleport(spectatorsSpawn);
                         }
                     }
                 }else {
@@ -205,6 +219,41 @@ public class Game {
 
     }
 
+    private boolean checkPlayerDeath(GamePlayer gamePlayer, Player player, double damage, boolean isVoid){
+        /**
+         * @return If player dead
+         * */
+        if (player.getHealth() - damage <= 0){
+            gamePlayer.addDeath();
+            gamePlayer.setPlayerState(PlayerState.DEAD);
+            if (isVoid){
+                player.teleport(spectatorsSpawn);
+            }
+
+            if (!gamePlayer.getTeam().hasBed()){
+                gamePlayer.setPlayerState(PlayerState.LOST);
+                setSpectatorSettingsForPlayer(player);
+            } else{
+                // Player on revolve
+
+
+            }
+        }
+        return false;
+    }
+
+    private void revolvePlayer(GamePlayer player){
+        player.setPlayerState(PlayerState.ALIVE);
+
+        Player p = Bukkit.getServer().getPlayer(player.getPlayerUuid());
+
+        if (p != null){
+            setGameSettings(p);
+            p.teleport(player.getTeam().getSpawnLocation());
+        }
+
+    }
+
     public void checkEndGame(){
 
     }
@@ -247,6 +296,16 @@ public class Game {
         // Save player's statistics, game's statistics
     }
 
+    private void setGameSettings(Player p){
+        p.setFlying(false);
+        p.setAllowFlight(false);
+
+        p.setHealth(20);
+        p.setFoodLevel(20);
+        p.getInventory().clear();
+
+    }
+
     private void setSpectatorSettingsForPlayer(Player p){
         p.setAllowFlight(true);
         p.setFlying(true);
@@ -255,6 +314,8 @@ public class Game {
         p.setFoodLevel(20);
         p.getInventory().clear();
         p.setFireTicks(0);
+
+        p.clearActivePotionEffects();
     }
 
     private void teleportPlayerToSpectatorSpawn(Player p){

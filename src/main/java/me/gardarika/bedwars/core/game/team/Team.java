@@ -42,4 +42,7 @@ public class Team {
         this.hasBed = false;
     }
 
+    public Location getSpawnLocation() {
+        return spawnLocation;
+    }
 }
