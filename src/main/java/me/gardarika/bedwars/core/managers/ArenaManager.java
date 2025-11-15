@@ -11,6 +11,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -192,5 +193,26 @@ public class ArenaManager {
 
             arena.forcedDestroy();
         }
+    }
+
+    public void createArena(MapData mapData, String arenaId, int totalPlayers){
+        Arena newArena = new Arena(mapData);
+
+        this.arenasData.put(
+                arenaId,
+                newArena
+        );
+
+        newArena.initializeGame(totalPlayers);
+    }
+
+    @Nullable
+    public Arena getArena(String arenaId){
+        return this.arenasData.get(arenaId);
+    }
+
+    @Nullable
+    public MapData getMapData(String mapId){
+        return this.mapsData.get(mapId);
     }
 }

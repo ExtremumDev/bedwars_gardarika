@@ -27,14 +27,14 @@ public class Arena {
         this.currentGame = null;
     }
 
-    public void initializeGame(){
-        if (currentGame == null){
+    public void initializeGame(int totalPlayers){
+        if (currentGame != null){
             return;
         }
 
         this.gameWorld = new WeakReference<>(loadGameWorld());
 
-        this.currentGame = new Game(this);
+        this.currentGame = new Game(this, totalPlayers);
     }
 
     public void playerJoin(Player player){

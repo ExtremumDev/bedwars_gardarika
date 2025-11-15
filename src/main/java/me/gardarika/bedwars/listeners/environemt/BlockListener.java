@@ -3,7 +3,6 @@ package me.gardarika.bedwars.listeners.environemt;
 import me.gardarika.bedwars.BedWars;
 import me.gardarika.bedwars.core.game.Game;
 import me.gardarika.bedwars.core.managers.PlayerManager;
-import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -17,7 +16,7 @@ public class BlockListener implements Listener {
 
     @EventHandler
     public void onBlockDestroy(BlockBreakEvent e){
-        Game playerGame = playerManager.getPlayerGame(e.getPlayer());
+        Game playerGame = playerManager.getPlayerCurrentActiveGame(e.getPlayer());
 
         if (playerGame == null){
             e.setCancelled(true);

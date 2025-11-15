@@ -54,8 +54,9 @@ public class Game {
 
 
 
-    public Game(Arena arena){
+    public Game(Arena arena, int maxPlayers){
         this.arena = arena;
+        this.maxPlayers = maxPlayers;
 
         World gameWorld = arena.getGameWorld();
 

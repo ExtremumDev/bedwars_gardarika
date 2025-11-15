@@ -32,7 +32,7 @@ public class LeaveJoinListener implements Listener {
     public void onPlayerLeave(PlayerQuitEvent e){
         // Get player's game
 
-        Game currentPlayerGame = playerManager.getPlayerGame(e.getPlayer());
+        Game currentPlayerGame = playerManager.getPlayerCurrentActiveGame(e.getPlayer());
 
         if (currentPlayerGame != null){
             currentPlayerGame.playerLeave(e.getPlayer());

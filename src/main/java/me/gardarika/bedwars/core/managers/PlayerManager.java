@@ -24,7 +24,7 @@ public class PlayerManager {
     }
 
     @Nullable
-    public Game getPlayerGame(Player p){
+    public Game getPlayerCurrentActiveGame(Player p){
         ServerPlayer serverPlayer = players.get(p.getUniqueId());
 
         return serverPlayer.getCurrentGame();

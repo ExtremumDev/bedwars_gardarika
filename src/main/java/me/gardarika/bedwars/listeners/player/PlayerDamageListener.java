@@ -4,12 +4,9 @@ import me.gardarika.bedwars.BedWars;
 import me.gardarika.bedwars.core.game.Game;
 import me.gardarika.bedwars.core.managers.LobbyManager;
 import me.gardarika.bedwars.core.managers.PlayerManager;
-import org.bukkit.BanEntry;
-import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 
 public class PlayerDamageListener implements Listener {
@@ -25,7 +22,7 @@ public class PlayerDamageListener implements Listener {
     @EventHandler
     public void onPlayerDamage(EntityDamageEvent e){
         if (e.getEntity() instanceof Player p){
-            Game game = playerManager.getPlayerGame(p);
+            Game game = playerManager.getPlayerCurrentActiveGame(p);
 
             if (game == null){
                 e.setCancelled(true);

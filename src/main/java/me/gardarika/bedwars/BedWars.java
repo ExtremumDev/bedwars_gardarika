@@ -1,8 +1,10 @@
 package me.gardarika.bedwars;
 
+import me.gardarika.bedwars.commands.MainBedWarsCommand;
 import me.gardarika.bedwars.core.managers.ArenaManager;
 import me.gardarika.bedwars.core.managers.LobbyManager;
 import me.gardarika.bedwars.core.managers.PlayerManager;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class BedWars extends JavaPlugin {
@@ -30,6 +32,16 @@ public class BedWars extends JavaPlugin {
         playerManager = new PlayerManager();
 
         lobbyManager = new LobbyManager();
+
+        PluginCommand mainBWCommand = getCommand("bedwars");
+
+        if (mainBWCommand != null){
+            mainBWCommand.setExecutor(
+                    new MainBedWarsCommand()
+            );
+        } else {
+            getLogger().warning("[Invalid config] \"/bedwars\" command not found in plugin yml, some features will not work");
+        }
     }
 
     @Override
@@ -51,9 +63,5 @@ public class BedWars extends JavaPlugin {
 
     public LobbyManager getLobbyManager() {
         return lobbyManager;
-    }
-
-    public void setLobbyManager(LobbyManager lobbyManager) {
-        this.lobbyManager = lobbyManager;
     }
 }
