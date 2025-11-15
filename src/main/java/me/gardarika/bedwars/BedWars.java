@@ -25,7 +25,7 @@ public class BedWars extends JavaPlugin {
 
         // start game set up
 
-        arenaManager.createArenasFromConfig();
+//        arenaManager.createArenasFromConfig();
 
         playerManager = new PlayerManager();
 

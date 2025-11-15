@@ -18,7 +18,6 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitTask;
 
 import javax.annotation.Nullable;
@@ -48,6 +47,10 @@ public class Game {
 
     private final Map<ResourceType, ResourceSpawner[]> resourceSpawners = new HashMap<>();
     private final Map<ResourceType, Integer> resourceSpawnTasksId = new HashMap<>();
+
+    // Gameplay properties
+
+    private Team winner;
 
 
 
@@ -90,9 +93,46 @@ public class Game {
         }
     }
 
+    // life cycle of game
+
+    private void startCountdown(){
+        this.currentGameState = GameState.STARTING;
+
+    }
+
+    private void cancelCountdown(){
+        this.currentGameState = GameState.WAITING;
+    }
+
 
     public void startGame(){
 
+    }
+
+    // Check if winner found, if yes - finish game
+    private void checkEndGame(){
+
+    }
+
+    private void finishGame(){
+        // Natural  game finish in case of winner appear
+    }
+
+    public void endForced(){
+        // Forced game finish, for example when server turned off or admin do it with command
+        this.kickPlayers();
+
+        this.saveData();
+
+        this.arena.clearArena();
+    }
+
+    private void clearGame(){
+        // Start clear from players, save statistics, start arena reload
+    }
+
+    private void stopGameMechanics(){
+        cancelResourceTasks();
     }
 
     public void addPlayer(Player p){
@@ -115,8 +155,23 @@ public class Game {
     }
 
     public void playerLeave(Player p){
-        GamePlayer gamePlayer = getGamePlayer(p.getUniqueId());
+        GamePlayer gamePlayer = getInGamePlayer(p.getUniqueId());
         if ()
+    }
+
+    private void spreadPlayersAmongTeams(){
+
+    }
+
+    /**
+     *
+     *
+     * @return game winner - if found
+     */
+
+    @Nullable
+    private Team findWinner(){
+
     }
 
     public void handlePlayerDamage(EntityDamageEvent event, Player damagedPlayer){
@@ -134,19 +189,19 @@ public class Game {
 
                 if (isVoidDamage){
 
-                    GamePlayer gamePlayer = getGamePlayer(damagedPlayer.getUniqueId());
+                    GamePlayer gamePlayer = getInGamePlayer(damagedPlayer.getUniqueId());
 
                     if (gamePlayer != null){
                         if (gamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
                             damagedPlayer.teleport(gamePlayer.getTeam().getSpawnLocation());
                         } else{
-                            damagedPlayer.teleport(this.spectatorsSpawn);
+                            teleportPlayerToSpectatorSpawn(damagedPlayer);
                         }
                     }
                 }
                 break;
             case ACTIVE:
-                GamePlayer gamePlayer = getGamePlayer(damagedPlayer.getUniqueId());
+                GamePlayer gamePlayer = getInGamePlayer(damagedPlayer.getUniqueId());
                 if (gamePlayer != null){
                     if (gamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
                         if (event instanceof EntityDamageByEntityEvent damagedByEntityEvent){
@@ -154,7 +209,7 @@ public class Game {
                             if (damagedByEntityEvent.getDamager() instanceof Player){
                                 Player damager = (Player) damagedByEntityEvent.getEntity();
 
-                                GamePlayer damagerGamePlayer = getGamePlayer(damager.getUniqueId());
+                                GamePlayer damagerGamePlayer = getInGamePlayer(damager.getUniqueId());
 
                                 if (damagerGamePlayer != null) {
                                     if (damagerGamePlayer.getTeam().equals(gamePlayer.getTeam())) {
@@ -170,7 +225,7 @@ public class Game {
                         event.setCancelled(true);
 
                         if (isVoidDamage){
-                            damagedPlayer.teleport(spectatorsSpawn);
+                            teleportPlayerToSpectatorSpawn(damagedPlayer);
                         }
                     }
                 }else {
@@ -189,7 +244,7 @@ public class Game {
             case ACTIVE:
                 if(destroyedBlock.getType().toString().endsWith("_BED")){
                     if (destroyer != null){
-                        GamePlayer destroyerGamePlayer = getGamePlayer(destroyer.getUniqueId());
+                        GamePlayer destroyerGamePlayer = getInGamePlayer(destroyer.getUniqueId());
 
                         if (destroyerGamePlayer != null && destroyerGamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
 
@@ -219,15 +274,15 @@ public class Game {
 
     }
 
+    /**
+     * @return If player dead
+     * **/
     private boolean checkPlayerDeath(GamePlayer gamePlayer, Player player, double damage, boolean isVoid){
-        /**
-         * @return If player dead
-         * */
         if (player.getHealth() - damage <= 0){
             gamePlayer.addDeath();
             gamePlayer.setPlayerState(PlayerState.DEAD);
             if (isVoid){
-                player.teleport(spectatorsSpawn);
+                teleportPlayerToSpectatorSpawn(player);
             }
 
             if (!gamePlayer.getTeam().hasBed()){
@@ -254,26 +309,6 @@ public class Game {
 
     }
 
-    public void checkEndGame(){
-
-    }
-
-    private void finishGame(){
-        // Natural  game finish in case of winner appear
-    }
-
-    public void endForced(){
-        // Forced game finish, for example when server turned off or admin do it with command
-        this.kickPlayers();
-
-        this.saveData();
-
-        this.arena.clearArena();
-    }
-
-    private void clearGame(){
-        // Start clear from players, save statistics, start arena reload
-    }
 
     private void kickPlayers(){
         // Clear arena from players, move them to lobby
@@ -322,7 +357,7 @@ public class Game {
         p.teleport(this.spectatorsSpawn);
     }
 
-    private GamePlayer getGamePlayer(UUID playerUuid){
+    private GamePlayer getInGamePlayer(UUID playerUuid){
         for (GamePlayer gamePlayer : this.players){
             if (gamePlayer.getPlayerUuid().equals(playerUuid)){
                 return gamePlayer;
