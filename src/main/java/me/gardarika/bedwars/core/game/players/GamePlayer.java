@@ -7,17 +7,21 @@ import java.util.UUID;
 public class GamePlayer {
     private final UUID playerUuid;
     private PlayerState state;
-    private Team team;
+    private Team team = null;
+    private final PlayerGameStatistic statistic;
 
     private boolean isOnArena = true;
 
-    public GamePlayer(UUID playerUuid){
-        this(playerUuid, PlayerState.ALIVE);
-    }
-
-    public GamePlayer(UUID playerUuid, PlayerState playerState){
+    public GamePlayer(UUID playerUuid, boolean isGameMember){
         this.playerUuid = playerUuid;
-        this.state = playerState;
+
+        if (isGameMember){
+            this.state = PlayerState.ALIVE;
+            this.statistic = new PlayerGameStatistic();
+        } else {
+            this.state = PlayerState.SPECTATOR;
+            this.statistic = null;
+        }
     }
 
     public UUID getPlayerUuid() {
@@ -41,15 +45,15 @@ public class GamePlayer {
     }
 
     public void addDestroyedBed(){
-
+        this.statistic.addDestroyedBed();
     }
 
     public void addKill(boolean isFinal){
-
+        this.statistic.addKill(isFinal);
     }
 
     public void addDeath(){
-
+        this.statistic.addDeath();
     }
 
     public void setTeam(Team team){

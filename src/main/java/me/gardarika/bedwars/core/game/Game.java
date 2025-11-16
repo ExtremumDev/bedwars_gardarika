@@ -112,7 +112,9 @@ public class Game {
 
     // Check if winner found, if yes - finish game
     private void checkEndGame(){
-
+        if (findWinner()){
+            finishGame();
+        }
     }
 
     private void finishGame(){
@@ -141,23 +143,82 @@ public class Game {
             case WAITING:
             case STARTING:
                 if (players.size() < maxPlayers){
+                    this.players.add(
+                            new GamePlayer(p.getUniqueId(), true)
+                    );
 
+                    p.teleport(this.waitingSpawn);
+
+                    if (currentGameState.equals(GameState.WAITING)){
+                        // check starting
+                    }
                 } else {
                     p.sendMessage(Component.text("Arena is full", NamedTextColor.RED));
                     return;
                 }
                 break;
             case ACTIVE:
+                GamePlayer gamePlayer = this.getGamePlayer(p.getUniqueId(), false);
+
+                if (gamePlayer == null){
+                    this.addNewSpectator(p);
+                } else {
+                    gamePlayer.setOnArena(true);
+
+                }
+                break;
             case FINISHED:
-                this.spectators.add(p);
-                setSpectatorSettingsForPlayer(p);
-                teleportPlayerToSpectatorSpawn(p);
+                this.addNewSpectator(p);
+                break;
         }
     }
 
     public void playerLeave(Player p){
         GamePlayer gamePlayer = getInGamePlayer(p.getUniqueId());
-        if ()
+        if (gamePlayer != null){
+            switch (this.currentGameState){
+                case WAITING:
+                    // Remove from players
+                    this.players.remove(gamePlayer);
+                    break;
+                case STARTING:
+                    // Remove from players, check if go to waiting
+                    this.players.remove(gamePlayer);
+                    break;
+                case ACTIVE:
+                    // If spectator: remove, if lost: set not in game, if alive: add death -> (if dead): checkEndGame set not in game
+                    handleActivePlayerQuit(gamePlayer);
+                    break;
+                case FINISHED:
+                    // If spectator: remove, if lost, alive, dead, lost: set not in game
+                    if (gamePlayer.getCurrentState().equals(PlayerState.SPECTATOR)){
+                        this.players.remove(gamePlayer);
+                    } else {
+                        gamePlayer.setOnArena(false);
+                    }
+            }
+        }
+    }
+
+    private void handleActivePlayerQuit(GamePlayer gamePlayer){
+        switch (gamePlayer.getCurrentState()){
+            case ALIVE:
+                gamePlayer.addDeath();
+                gamePlayer.setOnArena(false);
+                gamePlayer.setPlayerState(PlayerState.DEAD);
+                this.checkEndGame();
+                break;
+            case DEAD:
+                gamePlayer.setOnArena(false);
+                this.checkEndGame();
+                break;
+            case LOST:
+                gamePlayer.setOnArena(false);
+                break;
+            case SPECTATOR:
+                this.players.remove(gamePlayer);
+                break;
+        }
     }
 
     private void spreadPlayersAmongTeams(){
@@ -170,9 +231,24 @@ public class Game {
      * @return game winner - if found
      */
 
-    @Nullable
-    private Team findWinner(){
+    private boolean findWinner(){
+        Team winner = null;
+        for (Team team : teams){
+            if (!team.isLost()){
+                if (winner == null){
+                    winner = team;
+                } else {
+                    return false;
+                }
+            }
+        }
 
+        if (winner == null){
+            return false;
+        } else{
+            this.winner = winner;
+            return true;
+        }
     }
 
     public void handlePlayerDamage(EntityDamageEvent event, Player damagedPlayer){
@@ -358,9 +434,20 @@ public class Game {
         p.teleport(this.spectatorsSpawn);
     }
 
+    @Nullable
     private GamePlayer getInGamePlayer(UUID playerUuid){
+        return getGamePlayer(playerUuid, true);
+    }
+
+    /**
+     *
+     * @param checkOnArena - if true - return only if player on arena, if false - return in any case
+     * @return
+     */
+    @Nullable
+    private GamePlayer getGamePlayer(UUID playerUuid, boolean checkOnArena){
         for (GamePlayer gamePlayer : this.players){
-            if (gamePlayer.getPlayerUuid().equals(playerUuid)){
+            if (gamePlayer.getPlayerUuid().equals(playerUuid) && (gamePlayer.isOnArena() || !(checkOnArena))){
                 return gamePlayer;
             }
         }
@@ -389,6 +476,15 @@ public class Game {
         for (ResourceType resourceType : this.resourceSpawnTasksId.keySet()){
             Bukkit.getScheduler().cancelTask(this.resourceSpawnTasksId.get(resourceType));
         }
+    }
+
+    private void addNewSpectator(Player p){
+        this.players.add(
+                new GamePlayer(p.getUniqueId(), false)
+        );
+
+        this.setSpectatorSettingsForPlayer(p);
+        this.teleportPlayerToSpectatorSpawn(p);
     }
 
     @Nullable

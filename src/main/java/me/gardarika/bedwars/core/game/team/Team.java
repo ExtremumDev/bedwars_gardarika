@@ -3,6 +3,7 @@ package me.gardarika.bedwars.core.game.team;
 
 import me.gardarika.bedwars.core.config.TeamConfig;
 import me.gardarika.bedwars.core.game.players.GamePlayer;
+import me.gardarika.bedwars.core.game.players.PlayerState;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -44,5 +45,16 @@ public class Team {
 
     public Location getSpawnLocation() {
         return spawnLocation;
+    }
+
+    public boolean isLost(){
+        boolean lost = true;
+        for (GamePlayer gamePlayer : teamPlayers){
+            if (!gamePlayer.getCurrentState().equals(PlayerState.LOST)){
+                return false;
+            }
+        }
+
+        return lost;
     }
 }
