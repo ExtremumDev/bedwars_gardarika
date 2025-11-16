@@ -7,6 +7,7 @@ import me.gardarika.bedwars.core.config.TeamConfig;
 import me.gardarika.bedwars.core.environment.ResourceSpawner;
 import me.gardarika.bedwars.core.game.players.GamePlayer;
 import me.gardarika.bedwars.core.game.players.PlayerState;
+import me.gardarika.bedwars.core.game.scheduler.tasks.CountdownTask;
 import me.gardarika.bedwars.core.game.team.Team;
 import me.gardarika.bedwars.core.items.ResourceType;
 import me.gardarika.bedwars.core.managers.LobbyManager;
@@ -34,6 +35,7 @@ public class Game {
 
     // Game mode properties
     private int maxPlayers;
+    private int teamSize;
 
 
     // Players section
@@ -49,6 +51,7 @@ public class Game {
     private final Map<ResourceType, Integer> resourceSpawnTasksId = new HashMap<>();
 
     // Gameplay properties
+    private CountdownTask countdownTask;
 
     private Team winner;
 
@@ -99,15 +102,30 @@ public class Game {
     private void startCountdown(){
         this.currentGameState = GameState.STARTING;
 
+        this.countdownTask = new CountdownTask(this);
+
+        Bukkit.getScheduler().runTaskTimer(
+                BedWars.getInstance(),
+                this.countdownTask,
+                1,
+                1
+        );
     }
 
     private void cancelCountdown(){
         this.currentGameState = GameState.WAITING;
+        this.countdownTask.cancel();
     }
 
-
+    /**
+     * Starting after countdown came out
+     */
     public void startGame(){
+        this.cancelCountdown();
+        this.currentGameState = GameState.ACTIVE;
 
+        this.spreadPlayersAmongTeams();
+        this.startGameMechanics();
     }
 
     // Check if winner found, if yes - finish game
@@ -134,6 +152,10 @@ public class Game {
         // Start clear from players, save statistics, start arena reload
     }
 
+    private void startGameMechanics(){
+        setupResourceTasks();
+    }
+
     private void stopGameMechanics(){
         cancelResourceTasks();
     }
@@ -151,6 +173,15 @@ public class Game {
 
                     if (currentGameState.equals(GameState.WAITING)){
                         // check starting
+                        if (players.size() >= 2){
+                            startCountdown();
+                        }
+                    } else { // state = STARTING
+                        if (players.size() < 2){
+                            this.cancelCountdown();
+                            this.currentGameState = GameState.WAITING;
+                            this.countdownTask.cancel();
+                        }
                     }
                 } else {
                     p.sendMessage(Component.text("Arena is full", NamedTextColor.RED));
@@ -222,7 +253,24 @@ public class Game {
     }
 
     private void spreadPlayersAmongTeams(){
+        this.sortTeamArray();
 
+        int currentSmallestTeam = 0;
+        for (GamePlayer gamePlayer : players){
+            if (gamePlayer.getTeam() == null){
+                Team playerTeam = teams[currentSmallestTeam];
+
+                if (playerTeam.getTeamSize() != teamSize){
+                    gamePlayer.setTeam(playerTeam);
+                    playerTeam.addPlayer(gamePlayer);
+
+                    // Go to next team, where less players
+                    if (currentSmallestTeam < teamSize - 1 && playerTeam.getTeamSize() > teams[currentSmallestTeam + 1].getTeamSize()){
+                        currentSmallestTeam++;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -498,5 +546,18 @@ public class Game {
         }
 
         return bedTeam;
+    }
+
+    private void sortTeamArray(){
+        Team peTeam = null;
+        for (int i = 1; i < teams.length; i++){
+            for (int j = i; j < teams.length; j++){
+                if (teams[j].getTeamSize() < teams[0].getTeamSize()){
+                    peTeam = teams[j];
+                    teams[j] = teams[0];
+                    teams[j] = peTeam;
+                }
+            }
+        }
     }
 }

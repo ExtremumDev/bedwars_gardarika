@@ -29,6 +29,10 @@ public class Team {
         this.bedHeadLocation = teamConfig.getBedHeadCoordinates().toLocation(gameWorld);
     }
 
+    public void addPlayer(GamePlayer player){
+        player.setTeam(this);
+    }
+
     public boolean isTeamBed(Block bedBlock){
         Location bedBlockLocation = bedBlock.getLocation();
 
@@ -56,5 +60,9 @@ public class Team {
         }
 
         return lost;
+    }
+
+    public int getTeamSize(){
+        return teamPlayers.size();
     }
 }
