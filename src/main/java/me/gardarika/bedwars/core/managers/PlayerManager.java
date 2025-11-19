@@ -23,6 +23,12 @@ public class PlayerManager {
         );
     }
 
+    public void setCurrentPlayerGame(Player p, Game game){
+        ServerPlayer player = players.get(p.getUniqueId());
+
+        player.setCurrentGame(game);
+    }
+
     @Nullable
     public Game getPlayerCurrentActiveGame(Player p){
         ServerPlayer serverPlayer = players.get(p.getUniqueId());

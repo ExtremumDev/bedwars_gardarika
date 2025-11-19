@@ -1,6 +1,7 @@
 package me.gardarika.bedwars.core.game.team;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 
 import java.awt.*;
 
@@ -12,7 +13,8 @@ public enum TeamColor {
     AQUA("Лазурная Дружина", "§b", ChatColor.AQUA, org.bukkit.Color.AQUA),
     WHITE("Белая Гвардия", "§f", ChatColor.WHITE, org.bukkit.Color.WHITE),
     PINK("Розовый Отряд", "§d", ChatColor.LIGHT_PURPLE, org.bukkit.Color.FUCHSIA),
-    GRAY("Серая Стая", "§7", ChatColor.GRAY, org.bukkit.Color.GRAY);
+    GRAY("Серая Стая", "§7", ChatColor.GRAY, org.bukkit.Color.GRAY),
+    BLACK("Печенеги", "§0", ChatColor.BLACK, Color.BLACK);
 
     private final String displayName;  // Красивое название
     private final String colorCode;    // Для чата §c

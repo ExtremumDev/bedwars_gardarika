@@ -68,7 +68,7 @@ public class ArenaManager {
                     newArena
             );
 
-            newArena.initializeGame();
+            newArena.initializeGame(10);
 
             BedWars.getInstance().getLogger().info(
                     String.format("Data of arena with id %s was successfully read from config", arenaId)
@@ -88,6 +88,8 @@ public class ArenaManager {
             return;
         }
 
+        BedWars.getInstance().getLogger().info("[MAPS] Directory with maps config was found");
+
         if(!mapsConfigsDir.isDirectory()){
             BedWars.getInstance().getLogger().warning(
                     "Invalid maps config format(it is file, not directory)"
@@ -104,10 +106,16 @@ public class ArenaManager {
             );
             return;
         }
+
+        BedWars.getInstance().getLogger().info(String.format("[MAPS] %d maps config was found", mapsConfigFiles.length));
+
         for (File mapConfigFile : mapsConfigFiles){
             FileConfiguration mapConfig = YamlConfiguration.loadConfiguration(mapConfigFile);
 
             String mapId = mapConfig.getString("id");
+
+            Coordinates spectatorsSpawn = Coordinates.fromConfig(mapConfig.getConfigurationSection("spectators-spawn"));
+            Coordinates waitingSpawn = Coordinates.fromConfig(mapConfig.getConfigurationSection("waiting-spawn"));
 
             ConfigurationSection teamsConfigurationSection = mapConfig.getConfigurationSection("teams");
 
@@ -142,7 +150,7 @@ public class ArenaManager {
 
                 } catch (IllegalArgumentException e) {
                     BedWars.getInstance().getLogger().warning(
-                            String.format("Invalid team color in resource spawners section of maps config (mapId : %s)", mapId)
+                            String.format("Invalid team color in team's section of maps config (mapId : %s)", mapId)
                     );
                 }
             }
@@ -177,7 +185,9 @@ public class ArenaManager {
                     new MapData(
                             mapId,
                             teamConfigs,
-                            resourceSpawners
+                            resourceSpawners,
+                            spectatorsSpawn,
+                            waitingSpawn
                     )
             );
 

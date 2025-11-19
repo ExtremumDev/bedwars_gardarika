@@ -1,10 +1,16 @@
 package me.gardarika.bedwars.core.game.players;
 
+import me.gardarika.bedwars.BedWars;
+import me.gardarika.bedwars.core.game.Game;
+import me.gardarika.bedwars.core.game.scheduler.tasks.RevolvingTask;
 import me.gardarika.bedwars.core.game.team.Team;
+import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.UUID;
 
 public class GamePlayer {
+    private final Game game;
     private final UUID playerUuid;
     private PlayerState state;
     private Team team = null;
@@ -12,8 +18,12 @@ public class GamePlayer {
 
     private boolean isOnArena = true;
 
-    public GamePlayer(UUID playerUuid, boolean isGameMember){
+    private int secondsUntilRevolving = 0;
+    private int revolvingTaskId;
+
+    public GamePlayer(UUID playerUuid, Game game, boolean isGameMember){
         this.playerUuid = playerUuid;
+        this.game = game;
 
         if (isGameMember){
             this.state = PlayerState.ALIVE;
@@ -21,6 +31,29 @@ public class GamePlayer {
         } else {
             this.state = PlayerState.SPECTATOR;
             this.statistic = null;
+        }
+    }
+
+    public void startRevolving(){
+        this.secondsUntilRevolving = 5;
+        BukkitRunnable task = new RevolvingTask(this);
+
+        task.runTaskTimer(BedWars.getInstance(), 0, 20);
+
+
+        this.revolvingTaskId = task.getTaskId();
+    }
+
+    public void revolve(){
+        this.game.revolvePlayer(this);
+        Bukkit.getScheduler().cancelTask(this.revolvingTaskId);
+    }
+
+    public void stopGameMechanics(){
+        if (state.equals(PlayerState.DEAD)){
+            if (this.revolvingTaskId != 0){
+                Bukkit.getScheduler().cancelTask(this.revolvingTaskId);
+            }
         }
     }
 
@@ -62,5 +95,9 @@ public class GamePlayer {
 
     public Team getTeam(){
         return team;
+    }
+
+    public Game getGame() {
+        return game;
     }
 }

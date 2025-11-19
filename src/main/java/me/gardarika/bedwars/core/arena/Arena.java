@@ -1,5 +1,6 @@
 package me.gardarika.bedwars.core.arena;
 
+import me.gardarika.bedwars.BedWars;
 import me.gardarika.bedwars.core.config.MapData;
 import me.gardarika.bedwars.core.game.Game;
 import org.bukkit.Bukkit;
@@ -28,6 +29,8 @@ public class Arena {
     }
 
     public void initializeGame(int totalPlayers){
+        BedWars.getInstance().getLogger().info(
+                String.format("[ARENA] Initializing arena with id %s", "arenaId"));
         if (currentGame != null){
             return;
         }
@@ -35,6 +38,11 @@ public class Arena {
         this.gameWorld = new WeakReference<>(loadGameWorld());
 
         this.currentGame = new Game(this, totalPlayers);
+        this.state = ArenaState.READY;
+
+        BedWars.getInstance().getLogger().info(
+                String.format("[ARENA] Game was successfully launched on Arena with id %s", "arenaId")
+        );
     }
 
     public void playerJoin(Player player){
@@ -55,8 +63,18 @@ public class Arena {
         }
     }
 
+    public void startGame(){
+        if (currentGame == null){
+            return;
+        }
+
+        if (state.equals(ArenaState.READY)){
+            this.currentGame.startGame();
+        }
+    }
+
     private World loadGameWorld(){
-        return Bukkit.createWorld(new WorldCreator("game"));
+        return Bukkit.createWorld(new WorldCreator(map.getMapId()));
     }
 
     public void forcedDestroy(){
@@ -69,6 +87,10 @@ public class Arena {
         if (currentGame != null){
             this.currentGame.endForced();
         }
+    }
+
+    public void setClearing(){
+        this.state = ArenaState.CLEARING;
     }
 
     public void clearArena(){

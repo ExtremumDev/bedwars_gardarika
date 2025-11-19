@@ -19,12 +19,14 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
 public class Game {
+
     /**
      *
      */
@@ -34,13 +36,13 @@ public class Game {
 
 
     // Game mode properties
-    private int maxPlayers;
-    private int teamSize;
+    private final int maxPlayers;
+    private final int teamSize;
 
 
     // Players section
     private final Team[] teams;
-    private List<GamePlayer> players;
+    private final List<GamePlayer> players = new ArrayList<>();
 
     // Map properties
 
@@ -72,6 +74,8 @@ public class Game {
             this.teams[i] = new Team(teamConfigs[i], gameWorld);
         }
 
+        this.teamSize = this.teams.length;
+
         this.currentGameState = GameState.WAITING;
 
         this.waitingSpawn = mapData.getWaitingSpawn().toLocation(gameWorld);
@@ -95,6 +99,10 @@ public class Game {
                     typeResourceSpawners
             );
         }
+
+        BedWars.getInstance().getLogger().info(
+                String.format("[GAME MANAGER] Game was successfully created. Map: %s . Players number: %d", arena.getMap().getMapId(), maxPlayers)
+        );
     }
 
     // life cycle of game
@@ -114,7 +122,10 @@ public class Game {
 
     private void cancelCountdown(){
         this.currentGameState = GameState.WAITING;
-        this.countdownTask.cancel();
+
+        if (this.countdownTask != null){
+            this.countdownTask.cancel();
+        }
     }
 
     /**
@@ -125,6 +136,17 @@ public class Game {
         this.currentGameState = GameState.ACTIVE;
 
         this.spreadPlayersAmongTeams();
+        this.teleportPlayerToSpawns();
+
+        for (GamePlayer gamePlayer : players){
+            Player p = Bukkit.getPlayer(gamePlayer.getPlayerUuid());
+
+            if (p != null) {
+                setGameSettingsForPlayer(p);
+            } else {
+                gamePlayer.setOnArena(false);
+            }
+        }
         this.startGameMechanics();
     }
 
@@ -137,10 +159,20 @@ public class Game {
 
     private void finishGame(){
         // Natural  game finish in case of winner appear
+        this.currentGameState = GameState.FINISHED;
+
+        Bukkit.getScheduler().runTaskLater(
+                BedWars.getInstance(),
+                () -> {
+                    this.clearGame();
+                },
+                20*15
+        );
     }
 
     public void endForced(){
         // Forced game finish, for example when server turned off or admin do it with command
+
         this.kickPlayers();
 
         this.saveData();
@@ -150,6 +182,10 @@ public class Game {
 
     private void clearGame(){
         // Start clear from players, save statistics, start arena reload
+        this.arena.setClearing();
+        this.kickPlayers();
+        this.saveData();
+        this.arena.clearArena();
     }
 
     private void startGameMechanics(){
@@ -166,9 +202,10 @@ public class Game {
             case STARTING:
                 if (players.size() < maxPlayers){
                     this.players.add(
-                            new GamePlayer(p.getUniqueId(), true)
+                            new GamePlayer(p.getUniqueId(), this, true)
                     );
 
+                    setWaitingSettingsForPlayer(p);
                     p.teleport(this.waitingSpawn);
 
                     if (currentGameState.equals(GameState.WAITING)){
@@ -183,6 +220,8 @@ public class Game {
                             this.countdownTask.cancel();
                         }
                     }
+
+                    BedWars.getInstance().getPlayerManager().setCurrentPlayerGame(p, this);
                 } else {
                     p.sendMessage(Component.text("Arena is full", NamedTextColor.RED));
                     return;
@@ -197,9 +236,11 @@ public class Game {
                     gamePlayer.setOnArena(true);
 
                 }
+                BedWars.getInstance().getPlayerManager().setCurrentPlayerGame(p, this);
                 break;
             case FINISHED:
                 this.addNewSpectator(p);
+                BedWars.getInstance().getPlayerManager().setCurrentPlayerGame(p, this);
                 break;
         }
     }
@@ -228,6 +269,8 @@ public class Game {
                         gamePlayer.setOnArena(false);
                     }
             }
+
+            BedWars.getInstance().getPlayerManager().setCurrentPlayerGame(p, null);
         }
     }
 
@@ -237,6 +280,7 @@ public class Game {
                 gamePlayer.addDeath();
                 gamePlayer.setOnArena(false);
                 gamePlayer.setPlayerState(PlayerState.DEAD);
+                gamePlayer.stopGameMechanics();
                 this.checkEndGame();
                 break;
             case DEAD:
@@ -261,10 +305,9 @@ public class Game {
                 Team playerTeam = teams[currentSmallestTeam];
 
                 if (playerTeam.getTeamSize() != teamSize){
-                    gamePlayer.setTeam(playerTeam);
                     playerTeam.addPlayer(gamePlayer);
 
-                    // Go to next team, where less players
+                    // Go to next team, where fewer players
                     if (currentSmallestTeam < teamSize - 1 && playerTeam.getTeamSize() > teams[currentSmallestTeam + 1].getTeamSize()){
                         currentSmallestTeam++;
                     }
@@ -337,7 +380,12 @@ public class Game {
                                 GamePlayer damagerGamePlayer = getInGamePlayer(damager.getUniqueId());
 
                                 if (damagerGamePlayer != null) {
-                                    if (damagerGamePlayer.getTeam().equals(gamePlayer.getTeam())) {
+                                    if (damagerGamePlayer.getCurrentState().equals(PlayerState.ALIVE)){
+                                        if (damagerGamePlayer.getTeam().equals(gamePlayer.getTeam())) {
+                                            event.setCancelled(true);
+                                            return;
+                                        }
+                                    } else {
                                         event.setCancelled(true);
                                         return;
                                     }
@@ -345,11 +393,14 @@ public class Game {
                             }
                         }
 
+                        event.setCancelled(checkPlayerDeath(gamePlayer, damagedPlayer, event.getFinalDamage(), isVoidDamage));
+
 
                     } else {
                         event.setCancelled(true);
 
                         if (isVoidDamage){
+                            damagedPlayer.setFlying(true);
                             teleportPlayerToSpectatorSpawn(damagedPlayer);
                         }
                     }
@@ -376,8 +427,12 @@ public class Game {
                             Team bedTeam = findTeamBed(destroyedBlock);
 
                             if (bedTeam != null){
-                                if (bedTeam.hasBed()) {
-                                    bedDestroyed(bedTeam, destroyerGamePlayer);
+                                if (!bedTeam.equals(destroyerGamePlayer.getTeam())){
+                                    if (bedTeam.hasBed()) {
+                                        bedDestroyed(bedTeam, destroyerGamePlayer);
+                                        return false;
+                                    }
+                                } else {
                                     return true;
                                 }
                             }
@@ -395,41 +450,52 @@ public class Game {
         destroyedBedTeam.destroyBed();
 
         destroyer.addDestroyedBed();
-
-
     }
 
     /**
      * @return If player dead
      * **/
     private boolean checkPlayerDeath(GamePlayer gamePlayer, Player player, double damage, boolean isVoid){
+        if (isVoid){
+            teleportPlayerToSpectatorSpawn(player);
+            playerDead(gamePlayer, player);
+            return true;
+        }
         if (player.getHealth() - damage <= 0){
-            gamePlayer.addDeath();
-            gamePlayer.setPlayerState(PlayerState.DEAD);
-            if (isVoid){
-                teleportPlayerToSpectatorSpawn(player);
-            }
-
-            if (!gamePlayer.getTeam().hasBed()){
-                gamePlayer.setPlayerState(PlayerState.LOST);
-                setSpectatorSettingsForPlayer(player);
-            } else{
-                // Player on revolve
-
-
-            }
+            playerDead(gamePlayer, player);
+            return true;
         }
         return false;
     }
 
-    private void revolvePlayer(GamePlayer player){
+    private void playerDead(GamePlayer deadGamePlayer, Player dead){
+        deadGamePlayer.addDeath();
+        deadGamePlayer.setPlayerState(PlayerState.DEAD);
+        setSpectatorSettingsForPlayer(dead);
+
+        if (!deadGamePlayer.getTeam().hasBed()){
+            deadGamePlayer.setPlayerState(PlayerState.LOST);
+        } else{
+            // Player on revolve
+            this.playerOnRevolving(dead, deadGamePlayer);
+        }
+    }
+
+    private void playerOnRevolving(Player player, GamePlayer gamePlayer){
+        setSpectatorSettingsForPlayer(player);
+        gamePlayer.startRevolving();
+    }
+
+    public void revolvePlayer(GamePlayer player){
         player.setPlayerState(PlayerState.ALIVE);
 
         Player p = Bukkit.getServer().getPlayer(player.getPlayerUuid());
 
         if (p != null){
-            setGameSettings(p);
+            setGameSettingsForPlayer(p);
             p.teleport(player.getTeam().getSpawnLocation());
+        } else {
+            player.setOnArena(false);
         }
 
     }
@@ -456,9 +522,15 @@ public class Game {
         // Save player's statistics, game's statistics
     }
 
-    private void setGameSettings(Player p){
+    private void setWaitingSettingsForPlayer(Player p){
+        setGameSettingsForPlayer(p);
+        p.getInventory().setItem(8, new ItemStack(Material.RED_BED));
+    }
+
+    private void setGameSettingsForPlayer(Player p){
         p.setFlying(false);
         p.setAllowFlight(false);
+        p.setGameMode(GameMode.SURVIVAL);
 
         p.setHealth(20);
         p.setFoodLevel(20);
@@ -513,8 +585,8 @@ public class Game {
             BukkitTask spawnTask = Bukkit.getScheduler().runTaskTimer(
                     BedWars.getInstance(),
                     () -> this.spawnResourceForType(resourceType),
-                    20,
-                    20
+                    0,
+                    resourceType.getDefaultSpawnInterval()
             );
             this.resourceSpawnTasksId.put(resourceType, spawnTask.getTaskId());
         }
@@ -528,7 +600,7 @@ public class Game {
 
     private void addNewSpectator(Player p){
         this.players.add(
-                new GamePlayer(p.getUniqueId(), false)
+                new GamePlayer(p.getUniqueId(), this, false)
         );
 
         this.setSpectatorSettingsForPlayer(p);
@@ -549,7 +621,7 @@ public class Game {
     }
 
     private void sortTeamArray(){
-        Team peTeam = null;
+        Team peTeam;
         for (int i = 1; i < teams.length; i++){
             for (int j = i; j < teams.length; j++){
                 if (teams[j].getTeamSize() < teams[0].getTeamSize()){
@@ -559,5 +631,14 @@ public class Game {
                 }
             }
         }
+    }
+
+    private void teleportPlayerToSpawns(){
+        for (Team team : teams){
+            team.teleportPlayersToTeamSpawn();
+        }
+    }
+    public Arena getArena() {
+        return arena;
     }
 }

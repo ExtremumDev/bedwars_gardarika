@@ -4,9 +4,11 @@ package me.gardarika.bedwars.core.game.team;
 import me.gardarika.bedwars.core.config.TeamConfig;
 import me.gardarika.bedwars.core.game.players.GamePlayer;
 import me.gardarika.bedwars.core.game.players.PlayerState;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +33,17 @@ public class Team {
 
     public void addPlayer(GamePlayer player){
         player.setTeam(this);
+        teamPlayers.add(player);
+    }
+
+    public void teleportPlayersToTeamSpawn(){
+        for (GamePlayer gamePlayer : teamPlayers){
+            Player p = Bukkit.getPlayer(gamePlayer.getPlayerUuid());
+
+            if (p != null) {
+                p.teleport(this.spawnLocation);
+            }
+        }
     }
 
     public boolean isTeamBed(Block bedBlock){

@@ -19,4 +19,8 @@ public class ServerPlayer {
     public Game getCurrentGame(){
         return currentGame;
     }
+
+    public void setCurrentGame(Game game){
+        this.currentGame = game;
+    }
 }

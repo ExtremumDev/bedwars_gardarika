@@ -32,12 +32,12 @@ public class CreateArenaExecutor extends BaseExecutor {
                 totalPlayers = Integer.parseInt(stringTotalPlayers);
 
                 arenaManager.createArena(mapData, arenaId, totalPlayers);
-            } catch (NullPointerException e){
+            } catch (NumberFormatException e){
                 sender.sendMessage("Invalid players number, type number!!!!");
             }
 
         } else {
-            sender.sendMessage("Usage: /bw <arena-id> <map-id> <players-number>");
+            sender.sendMessage("Usage: /bw create-arena <arena-id> <map-id> <players-number>");
         }
     }
 }

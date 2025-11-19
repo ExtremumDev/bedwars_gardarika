@@ -2,8 +2,11 @@ package me.gardarika.bedwars.commands;
 
 import me.gardarika.bedwars.commands.executors.BaseExecutor;
 import me.gardarika.bedwars.commands.executors.BWLeaveExecutor;
+import me.gardarika.bedwars.commands.executors.admin.BWReloadExecutor;
 import me.gardarika.bedwars.commands.executors.admin.CreateArenaExecutor;
 import me.gardarika.bedwars.commands.executors.JoinGameExecutor;
+import me.gardarika.bedwars.commands.executors.admin.StartGameExecutor;
+import me.gardarika.bedwars.commands.executors.admin.StopGameExecutor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -30,6 +33,18 @@ public class MainBedWarsCommand implements CommandExecutor {
                 "leave",
                 new BWLeaveExecutor()
         );
+        bwCommandsExecutors.put(
+                "start-game",
+                new StartGameExecutor()
+        );
+        bwCommandsExecutors.put(
+                "reload",
+                new BWReloadExecutor()
+        );
+        bwCommandsExecutors.put(
+                "stop",
+                new StopGameExecutor()
+        );
     }
 
     @Override
@@ -37,6 +52,7 @@ public class MainBedWarsCommand implements CommandExecutor {
 
         if (args.length == 0){
             sendHelpInformation();
+            return false;
         }
 
         String option = args[0];

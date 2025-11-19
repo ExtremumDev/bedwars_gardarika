@@ -4,8 +4,13 @@ import me.gardarika.bedwars.commands.MainBedWarsCommand;
 import me.gardarika.bedwars.core.managers.ArenaManager;
 import me.gardarika.bedwars.core.managers.LobbyManager;
 import me.gardarika.bedwars.core.managers.PlayerManager;
+import me.gardarika.bedwars.listeners.environemt.BlockListener;
+import me.gardarika.bedwars.listeners.player.LeaveJoinListener;
+import me.gardarika.bedwars.listeners.player.PlayerDamageListener;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.logging.Logger;
 
 public class BedWars extends JavaPlugin {
 
@@ -39,9 +44,26 @@ public class BedWars extends JavaPlugin {
             mainBWCommand.setExecutor(
                     new MainBedWarsCommand()
             );
+            getLogger().info("[INFO] Executor for main ved wars command set");
+
         } else {
             getLogger().warning("[Invalid config] \"/bedwars\" command not found in plugin yml, some features will not work");
         }
+
+        // Listeners
+
+        getServer().getPluginManager().registerEvents(
+                new LeaveJoinListener(),
+                this
+        );
+        getServer().getPluginManager().registerEvents(
+                new PlayerDamageListener(),
+                this
+        );
+        getServer().getPluginManager().registerEvents(
+                new BlockListener(),
+                this
+        );
     }
 
     @Override

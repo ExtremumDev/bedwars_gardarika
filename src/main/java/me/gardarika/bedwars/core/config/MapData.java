@@ -14,12 +14,18 @@ public class MapData {
     private final Coordinates spectatorsSpawn;
     private final Coordinates waitingSpawn;
 
-    public MapData(String mapId, TeamConfig[] teams, Map<ResourceType, List<Coordinates>> resourceSpawners){
+    public MapData(
+            String mapId,
+            TeamConfig[] teams,
+            Map<ResourceType, List<Coordinates>> resourceSpawners,
+            Coordinates spectatorsSpawn,
+            Coordinates waitingSpawn
+    ){
         this.mapId = mapId;
         this.resourceSpawners = resourceSpawners;
         this.teams = teams;
-        this.spectatorsSpawn = null;
-        this.waitingSpawn = null;
+        this.spectatorsSpawn = spectatorsSpawn;
+        this.waitingSpawn = waitingSpawn;
     }
 
     public TeamConfig[] getTeams() {
@@ -36,5 +42,9 @@ public class MapData {
 
     public Coordinates getWaitingSpawn() {
         return waitingSpawn;
+    }
+
+    public String getMapId() {
+        return mapId;
     }
 }

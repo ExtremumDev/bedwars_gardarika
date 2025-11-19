@@ -23,8 +23,8 @@ public class LeaveJoinListener implements Listener {
 
 
         // Data base check, data get
-
-        lobbyManager.teleportPlayerToLobbySpawn(e.getPlayer());
+        playerManager.newPlayer(e.getPlayer());
+        lobbyManager.movePlayerToLobby(e.getPlayer());
 
     }
 
